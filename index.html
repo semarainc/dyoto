@@ -38,9 +38,12 @@
                 <input type="checkbox" id="doubt-check" class="form-check-input" style="transform: scale(2);">
                 <label for="doubt-check" class="form-check-label">Ragu</label>
                 <br><br>
+                <div data-mdb-input-init class="form-outline mb-4">
+                    <input class="form-control" id="catatan" name="catatan" value="" placeholder="Catatan Disini"></input>
+                </div>
+                <button id="download-csv" class="btn btn-success" style="display: none;">Download CSV</button><br>
                 <button id="prev-btn" class="btn btn-secondary">Previous</button>
                 <button id="next-btn" class="btn btn-primary">Next</button>
-                <button id="download-csv" class="btn btn-success" style="display: none;">Download CSV</button>
             </div>
         </div>
     </div>
@@ -49,7 +52,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Upload PDF dan Set Waktu</h5>
+                    <h5 class="modal-title">Upload PDF dan Set Waktu, Jumlah Soal</h5>
                     <button type="button" class="btn-close" disabled></button>
                 </div>
                 <div class="modal-body">
@@ -75,6 +78,7 @@
         const downloadBtn = document.getElementById('download-csv');
         const currentQuestionDisplay = document.getElementById('current-question');
         const doubtCheck = document.getElementById('doubt-check');
+        const noteText = document.getElementById('catatan');
         let pdfBlobUrl = '';
 
         window.onload = function() {
@@ -107,7 +111,7 @@
 
         function setupQuestions(count) {
             for (let i = 1; i <= count; i++) {
-                answers[i] = { answer: "", doubt: false };
+                answers[i] = { answer: "", doubt: false, note: "" };
                 const option = document.createElement('option');
                 option.value = i;
                 option.textContent = `Soal ${i}`;
@@ -139,6 +143,9 @@
             if (currentAnswer.answer) {
                 document.getElementById(`option-${currentAnswer.answer}`).checked = true;
             }
+
+            noteText.value = currentAnswer.note;
+
             doubtCheck.checked = currentAnswer.doubt;
 
             // Event listeners for saving answers
@@ -147,6 +154,7 @@
                 input.onchange = saveAnswer;
             });
             doubtCheck.onchange = saveDoubt;
+            noteText.onchange = saveNote;
 
             // Update dropdown
             updateQuestionSelect();
@@ -159,6 +167,11 @@
 
         function saveDoubt() {
             answers[currentPage].doubt = this.checked;
+            updateQuestionSelect();
+        }
+
+        function saveNote() {
+            answers[currentPage].note = this.value;
             updateQuestionSelect();
         }
 
@@ -206,11 +219,12 @@
         };
 
         downloadBtn.onclick = function() {
-            let csvContent = "Nomor,Jawaban,Ragu\n"; // Header CSV
+            let csvContent = "Nomor,Jawaban,Ragu,Catatan\n"; // Header CSV
             for (let i = 1; i < answers.length; i++) {
                 const answer = answers[i];
                 const ragu = answer.doubt ? 1 : 0;
-                csvContent += `${i},${answer.answer || ''},${ragu}\n`;
+                const catatan = [answer.note].map(string => string === null ? '' : `\"${string}\"`);
+                csvContent += `${i},${answer.answer || ''},${ragu},${catatan}\n`;
             }
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
